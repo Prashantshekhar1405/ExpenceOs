@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from .models import User , Department
-from .serializers import UserSerializer , UserCreateSerializer , DepartmentSerializer
+from .serializers import UserSerializer , UserCreateSerializer , DepartmentSerializer , LoginSerializer
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
 from . import permissions
 
 # Create your views here.
@@ -32,3 +33,6 @@ class DepartmentViewSet(ModelViewSet):
             return [permissions.IsAdminReadOnly()]
 
         return [IsAuthenticated()]
+
+class LoginViewSet(TokenObtainPairView):
+    serializer_class = LoginSerializer
