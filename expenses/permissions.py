@@ -28,6 +28,8 @@ class ExpensePermission(BasePermission):
             return view.action in [
                 "list",
                 "retrieve",
+                "approve",
+                "reject",
             ]
 
         if user.role == User.Role.FINANCE_MANAGER:
@@ -45,7 +47,6 @@ class ExpensePermission(BasePermission):
             return True
 
         if user.role == User.Role.EMPLOYEE:
-
             if obj.employee != user:
                 return False
             
@@ -55,7 +56,13 @@ class ExpensePermission(BasePermission):
             return True
 
         if user.role == User.Role.MANAGER:
-            return obj.employee.manager == user
+            if obj.employee.manager != user:
+                return False
+
+            if view.action in ["approve" , "reject"]:
+                return obj.status == Expense.Status.PENDING
+            
+            return True
 
         if user.role == User.Role.FINANCE_MANAGER:
             return obj.status == obj.Status.APPROVED
