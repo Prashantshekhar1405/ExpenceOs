@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.db import transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -7,6 +7,7 @@ from core.models import User
 from . import serializers
 from .models import Expense
 from .permissions import ExpensePermission
+from reimbursement.models import Reimbursement
 # Create your views here.
 
 class ExpenseViewSet(ModelViewSet):
@@ -43,9 +44,19 @@ class ExpenseViewSet(ModelViewSet):
             return Response({
                 "message" : "only pending expense can be approved"
             } , status=status.HTTP_400_BAD_REQUEST)
-        
-        expense.status = Expense.Status.APPROVED
-        expense.save()
+
+        with transaction.atomic():
+            expense.status = Expense.Status.APPROVED
+            expense.save()
+
+            Reimbursement.objects.get_or_create(
+                expense = expense,
+                defaults={
+                    "employee" : expense.employee,
+                    "amount" : expense.amount,
+                }
+            )
+
         return Response({
             "message" : "Expense approved successfully",
             "expense_id" : expense.id,
