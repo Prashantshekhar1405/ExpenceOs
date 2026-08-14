@@ -10,6 +10,9 @@ django-debug-toolbar = "*"
 djangorestframework-simplejwt = "*"
 pytesseract = "*"
 pillow = "*"
+channels = "*"
+channels-redis = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
