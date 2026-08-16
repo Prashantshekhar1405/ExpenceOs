@@ -11,10 +11,10 @@ class Notification(models.Model):
         OCR_COMPLETED = "ocr_completed", "OCR Completed"
         OCR_FAILED = "ocr_failed", "OCR Failed"
 
-        REIMBURSEMENT_CREATED = ("reimbursement_created","Reimbursement Created")
-        REIMBURSEMENT_PROCESSING = ("reimbursement_processing","Reimbursement Processing")
-        REIMBURSEMENT_PAID = ("reimbursement_paid","Reimbursement Paid")
-        REIMBURSEMENT_FAILED = ("reimbursement_failed","Reimbursement Failed")
+        REIMBURSEMENT_CREATED = "reimbursement_created","Reimbursement Created"
+        REIMBURSEMENT_PROCESSING = "reimbursement_processing","Reimbursement Processing"
+        REIMBURSEMENT_PAID = "reimbursement_paid","Reimbursement Paid"
+        REIMBURSEMENT_FAILED = "reimbursement_failed","Reimbursement Failed"
 
         BUDGET_WARNING = "budget_warning", "Budget Warning"
 

@@ -1,7 +1,7 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
-    async def connet(self):
+    async def connect(self):
         user = self.scope["user"]
 
         if user.is_anonymous:

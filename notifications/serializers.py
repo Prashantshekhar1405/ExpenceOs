@@ -7,15 +7,15 @@ class NotificationSerializer(ModelSerializer):
         fields = [
             "id",
             "notification_type",
-            "title"
+            "title",
             "message",
             "is_read",
             "created_at",
         ]
-        read_only_field = [
+        read_only_fields = [
             "id",
             "notification_type",
-            "title"
+            "title",
             "message",
             "created_at",
         ]
