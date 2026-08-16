@@ -8,6 +8,8 @@ from . import serializers
 from .models import Expense
 from .permissions import ExpensePermission
 from reimbursement.models import Reimbursement
+from notifications.models import Notification
+from notifications.services import create_notification
 # Create your views here.
 
 class ExpenseViewSet(ModelViewSet):
@@ -16,7 +18,18 @@ class ExpenseViewSet(ModelViewSet):
     permission_classes = [ExpensePermission]
 
     def perform_create(self, serializer):
-        serializer.save(employee = self.request.user)
+        expense = serializer.save(employee = self.request.user)
+        manager = expense.employee.manager
+        if manager:
+            create_notification(
+                user=manager , 
+                notification_type= Notification.NotificationType.EXPENSE_SUBMITTED ,
+                title= "New Expense submitted",
+                message=(
+                    f"{expense.employee.email} submitted"
+                    f"an expense of {expense.amount}"
+                )
+            )
 
     def get_queryset(self):
         user = self.request.user
@@ -57,6 +70,28 @@ class ExpenseViewSet(ModelViewSet):
                 }
             )
 
+        create_notification(
+            user=expense.employee , 
+            notification_type=(Notification.NotificationType.EXPENSE_APPROVED),
+            title="Expnse Approved",
+            message=(
+                f"Your expense of ${expense.amount}"
+                "has been approved."
+            )
+        )
+        finance_managers = User.objects.filter(
+            role = User.Role.FINANCE_MANAGER
+        )
+        for finance_manager in finance_managers:
+            create_notification(
+                user=finance_manager , 
+                notification_type=(Notification.NotificationType.REIMBURSEMENT_CREATED),
+                title="New Reimbursement",
+                message=(
+                    f"A reimbursement of ₹{expense.amount} "
+                    "is ready for processing."
+                )
+            )
         return Response({
             "message" : "Expense approved successfully",
             "expense_id" : expense.id,
@@ -72,9 +107,18 @@ class ExpenseViewSet(ModelViewSet):
             return Response({
                 "message" : "only pending expenses can be rejected"
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+        create_notification(
+            user=expense.employee , 
+            notification_type=(Notification.NotificationType.EXPENSE_REJECTED),
+            title="Expense Rejected",
+            message=(
+                f"Your expense of ₹{expense.amount} "
+                "has been rejected"
+            )
+        )
         expense.status = Expense.Status.REJECTED
         expense.save()
+
 
         return Response({
             "message" : "Expense rejected successfully",

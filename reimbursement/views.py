@@ -7,6 +7,8 @@ from .models import Reimbursement
 from .serializers import ReimbursementSerializer
 from .permissions import ReimbursementPermission
 from core.models import User
+from notifications.services import create_notification
+from notifications.models import Notification
 
 # Create your views here.
 
@@ -50,7 +52,15 @@ class ReimbursementViewSet(ModelViewSet):
                 "updated_at",
             ]
         )
-
+        create_notification(
+            user = reimbursement.employee,
+            notification_type=(Notification.NotificationType.REIMBURSEMENT_PROCESSING),
+            title="reimbursement processing",
+            message=(
+                f"Your reimbursement of ${reimbursement.amount}"
+                "is under processing"
+            )
+        )
         return Response(ReimbursementSerializer(reimbursement).data)
 
     @action(detail=True , methods=["post"])
@@ -83,11 +93,19 @@ class ReimbursementViewSet(ModelViewSet):
             update_fields = [
                 "status",
                 "transaction_reference",
-                "process_at",
+                "processed_at",
                 "updated_at",
             ]
         )
-
+        create_notification(
+            user = reimbursement.employee,
+            notification_type=(Notification.NotificationType.REIMBURSEMENT_PAID),
+            title="reimbursement payed",
+            message=(
+                f"Your reimbursement of ${reimbursement.amount}"
+                "has been paid"
+            )
+        )
         return Response(ReimbursementSerializer(reimbursement).data)
 
     @action(detail=True , methods=["post"])
@@ -121,5 +139,13 @@ class ReimbursementViewSet(ModelViewSet):
                 "updated_at",
             ]
         )
-
+        create_notification(
+            user = reimbursement.employee,
+            notification_type=(Notification.NotificationType.REIMBURSEMENT_FAILED),
+            title="reimbursement failed",
+            message=(
+                f"Your reimbursement of ${reimbursement.amount}"
+                "has failed"
+            )
+        )
         return Response(ReimbursementSerializer(reimbursement).data)

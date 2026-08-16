@@ -3,6 +3,6 @@ from .views import ReimbursementViewSet
 
 router = DefaultRouter()
 
-router.register("reibursements" , ReimbursementViewSet , basename="reimbursement")
+router.register("reimbursements" , ReimbursementViewSet , basename="reimbursement")
 
 urlpatterns = router.urls

@@ -8,6 +8,8 @@ from core.models import User
 from expenses.models import Expense
 from .services.ocr import extract_text
 from .services.parser import parse_receipt
+from notifications.services import create_notification
+from notifications.models import Notification
 # Create your views here.
 logger = logging.getLogger(__name__)
 
@@ -62,8 +64,20 @@ class ReceiptViewSet(ModelViewSet):
 
             receipt.ocr_status = Receipt.OCRStatus.COMPLETED
             receipt.save()
+            create_notification(
+                user= receipt.expense.employee,
+                notification_type=(Notification.NotificationType.OCR_COMPLETED),
+                title="Receipt OCR completed",
+                message=("your receipt has been processed successfully"),
+            )
         except Exception:
             logger.exception("ocr failed for receipt %s", receipt.id)
 
             receipt.ocr_status = Receipt.OCRStatus.FAILED
             receipt.save(update_fields=["ocr_status"])
+            create_notification(
+                user= receipt.expense.employee,
+                notification_type=(Notification.NotificationType.OCR_FAILED),
+                title="Receipt OCR failed",
+                message=("your receipt has failed to process"),
+            )

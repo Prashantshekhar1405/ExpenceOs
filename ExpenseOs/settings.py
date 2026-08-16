@@ -83,11 +83,21 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ExpenseOs.wsgi.application'
-
+ASGI_APPLICATION = "ExpenseOs.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
 
+        "CONFIG": {
+            "hosts": [
+                ("127.0.0.1", 6379)
+            ],
+        },
+    },
+}
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
