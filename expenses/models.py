@@ -15,6 +15,7 @@ class Expense(models.Model):
         APPROVED = "approved" , "Approved"
         REJECTED = "rejected" , "Rejected"
         PENDING = "pending" , "Pending"
+        PAID = "paid" , "Paid"
 
     employee = models.ForeignKey(settings.AUTH_USER_MODEL , on_delete=models.CASCADE , related_name="expenses")
     expense_category = models.ForeignKey(to=ExpenseCategory, on_delete=models.SET_NULL , null=True , related_name="expenses")
@@ -22,7 +23,7 @@ class Expense(models.Model):
     department = models.ForeignKey(to=Department , on_delete=models.SET_NULL , null=True , related_name="expenses")
     expense_date = models.DateField()
     reason = models.TextField()
-    status = models.CharField(max_length=10 , choices=Status.choices , default=Status.PENDING)
+    status = models.CharField(max_length=15 , choices=Status.choices , default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

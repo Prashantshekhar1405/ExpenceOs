@@ -97,6 +97,10 @@ class ReimbursementViewSet(ModelViewSet):
                 "updated_at",
             ]
         )
+        expense = reimbursement.expense
+        expense.status = Expense.Status.PAID
+        expense.save(update_fields=["status", "updated_at"])
+        
         create_notification(
             user = reimbursement.employee,
             notification_type=(Notification.NotificationType.REIMBURSEMENT_PAID),
