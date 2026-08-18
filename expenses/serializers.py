@@ -5,9 +5,9 @@ class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expense
         fields = [
-            "id" , "employee" ,"employee_name", 
-            "expense_category" ,"expense_category_name", 
-            "amount" , "department" ,"department_name", 
+            "id" , "employee" ,
+            "expense_category" ,
+            "amount" , "department" ,
             "expense_date" , "reason" , "status"
         ]
         read_only_fields = ["id" , "employee" , "status"]
