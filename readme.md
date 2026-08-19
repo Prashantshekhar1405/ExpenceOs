@@ -115,36 +115,19 @@ The backend is built using Django and Django REST Framework.
 ExpenseOS/
 │
 ├── manage.py
-│
-├── project/
+├── ExpenseOs/
 │   ├── settings.py
 │   ├── urls.py
 │   ├── asgi.py
 │   └── wsgi.py
 │
 ├── core/
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│   └── ...
-│
 ├── expenses/
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│   └── ...
-│
-├── approvals/
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│   └── ...
+├── receipt/
+├── reimbursement/
+├── notifications/
 │
 ├── media/
-│
 ├── requirements.txt
 └── README.md
 ```
@@ -155,12 +138,25 @@ ExpenseOS/
 
 ### Backend
 
--   Python
+-   Python 3.13+
 -   Django
 -   Django REST Framework
+-   Django Channels
 -   Simple JWT
 -   SQLite during development
 -   PostgreSQL-ready architecture for production
+
+### Real-Time Communication
+
+-   Django Channels
+-   Redis
+-   `channels_redis` as the Redis channel layer backend
+-   WebSocket-based real-time notifications
+
+### Containerization
+
+-   Docker
+-   Redis running as a Docker container during development
 
 ### API & Authentication
 
@@ -310,6 +306,40 @@ REIMBURSED
 The exact status model can evolve as additional finance and
 reimbursement functionality is implemented.
 
+## 🔌 Real-Time Notification Architecture
+
+ExpenseOS uses Django Channels and Redis alongside the normal REST API.
+
+```text
+                    ┌──────────────────┐
+                    │     Frontend     │
+                    └────────┬─────────┘
+                             │
+                    HTTP / WebSocket
+                             │
+                             ▼
+              ┌──────────────────────────┐
+              │ Django + DRF + Channels  │
+              └────────────┬─────────────┘
+                           │
+              ┌────────────┴─────────────┐
+              │                          │
+              ▼                          ▼
+        REST / Database          Notification Event
+                                         │
+                                         ▼
+                                  ┌─────────────┐
+                                  │    Redis    │
+                                  │    :6379    │
+                                  └──────┬──────┘
+                                         │
+                                         ▼
+                                  WebSocket Client
+```
+
+Redis acts as the communication layer for Django Channels. It is separate
+from the application's relational database.
+
 ## 🌐 API Structure
 
 The API is organized by application responsibility.
@@ -359,59 +389,151 @@ Recommended testing flow:
 
 ## ⚙️ Installation
 
+Follow these steps to run ExpenseOS locally.
+
+### Prerequisites
+
+Make sure the following are installed:
+
+- Python 3.13+
+- Git
+- Docker Desktop
+- Node.js/npm if you are also running the frontend
+
+Docker is required for the Redis service used by Django Channels.
+
 ### 1. Clone the repository
 
-``` bash
+```bash
 git clone <repository-url>
 cd ExpenseOS
 ```
 
-### 2. Create a virtual environment
+### 2. Create and activate a virtual environment
 
-Windows:
+#### Windows
 
-``` bash
+```bash
 python -m venv venv
 venv\Scripts\activate
 ```
 
-Linux/macOS:
+#### Linux/macOS
 
-``` bash
+```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. Install Python dependencies
 
-``` bash
+```bash
 pip install -r requirements.txt
 ```
 
-### 4. Apply migrations
+### 4. Start Redis with Docker
 
-``` bash
+ExpenseOS uses Redis as the channel layer for Django Channels and real-time notifications.
+
+If the Redis container already exists:
+
+```bash
+docker start expenseos-redis
+```
+
+If it does not exist yet:
+
+```bash
+docker run -d --name expenseos-redis -p 6379:6379 redis:latest
+```
+
+Verify that the container is running:
+
+```bash
+docker ps
+```
+
+You can also verify that Redis is responding:
+
+```bash
+docker exec -it expenseos-redis redis-cli ping
+```
+
+Expected output:
+
+```text
+PONG
+```
+
+### 5. Apply migrations
+
+```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-### 5. Create an admin user
+### 6. Create an admin user
 
-``` bash
+```bash
 python manage.py createsuperuser
 ```
 
-### 6. Start the development server
+### 7. Start the Django backend
 
-``` bash
+```bash
 python manage.py runserver
 ```
 
-The API will then be available at:
+The API will be available at:
 
-``` text
+```text
 http://127.0.0.1:8000/
 ```
+
+### Redis and Django Channels
+
+Redis is not the database for ExpenseOS. It is used by Django Channels as the **channel layer** that allows different parts of the application to communicate through real-time messaging.
+
+The current development configuration connects Channels to:
+
+```text
+127.0.0.1:6379
+```
+
+The relationship is:
+
+```text
+Frontend
+    │
+    │ HTTP / WebSocket
+    ▼
+Django + DRF + Channels
+    │
+    ├── REST APIs
+    │
+    └── Real-time notifications
+             │
+             ▼
+        Redis :6379
+```
+
+For example, when an employee submits an expense, the expense can be persisted normally and the notification layer can use Redis/Channels to deliver a real-time notification to the appropriate user.
+
+### Recommended development startup
+
+Run Redis first:
+
+```bash
+docker start expenseos-redis
+```
+
+Then run Django:
+
+```bash
+python manage.py runserver
+```
+
+If Redis is unavailable, REST endpoints that trigger real-time notifications may raise a Redis connection error. Therefore, Redis should be running during normal local development.
 
 ## 🔧 Environment Variables
 
@@ -438,7 +560,9 @@ secrets to the repository.
 
 ExpenseOS is intended to grow beyond a basic CRUD application.
 
-Planned functionality includes:
+Current functionality includes role-based expense management, approval
+workflows, receipt handling, OCR support, and real-time notifications.
+Additional enterprise functionality is planned, including:
 
 ### Advanced Approval Workflow
 
@@ -469,10 +593,14 @@ Potential metrics:
 -   Monthly expense trends
 -   Budget utilization
 
-### Receipt OCR
+### Receipt Upload & OCR
 
-Future OCR functionality can extract information from uploaded receipts
-such as:
+ExpenseOS includes receipt handling as part of the expense workflow.
+
+Receipts can be uploaded and associated with expenses, and the OCR scanner is
+used to extract useful information from receipt images.
+
+Typical OCR data can include:
 
 ``` text
 Merchant
@@ -480,7 +608,13 @@ Amount
 Date
 Tax
 Invoice Number
+Expense Category
 ```
+
+OCR-extracted values are used to assist expense creation. Fields that represent
+relationships in the database, such as `expense_category`, must ultimately
+resolve to the corresponding database record rather than being stored as an
+arbitrary category string.
 
 ### Audit Logs
 
@@ -505,12 +639,18 @@ Future support may include importing expense data from:
 
 ### Notifications
 
-Possible notification channels:
+ExpenseOS includes a notification layer for workflow events and real-time
+updates.
 
--   Email
--   In-app notifications
--   Approval reminders
--   Expense status updates
+The current real-time notification architecture uses:
+
+-   Django Channels
+-   Redis
+-   WebSocket communication
+-   In-app expense/approval status notifications
+
+Additional notification channels such as email can be added as the project
+evolves.
 
 ## 🧠 Engineering Focus
 
@@ -592,14 +732,10 @@ tests.
 -   [x] Approval workflow foundation
 -   [x] Manager approval/decline flow
 -   [x] Finance-side approved expense flow
--   [ ] Advanced finance processing
--   [ ] Budget management
--   [ ] Analytics
--   [ ] Audit logs
--   [ ] OCR receipt processing
--   [ ] Notifications
--   [ ] Automated test suite
--   [ ] Production deployment
+-   [x] Receipt upload foundation
+-   [x] OCR-based receipt scanning
+-   [x] Django Channels integration
+-   [x] Redis channel layer for real-time notifications
 
 ## 🤝 Contributing
 
