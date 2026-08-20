@@ -19,6 +19,8 @@ class ReceiptViewSet(ModelViewSet):
     permission_classes = [ReceiptPermission]
     parser_classes = [MultiPartParser , FormParser]
 
+
+
     def get_queryset(self):
         user = self.request.user
 
