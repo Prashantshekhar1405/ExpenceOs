@@ -18,7 +18,10 @@ class ExpenseViewSet(ModelViewSet):
     permission_classes = [ExpensePermission]
 
     def perform_create(self, serializer):
-        expense = serializer.save(employee = self.request.user)
+        user = self.request.user
+        dept = serializer.validated_data.get('department') or user.department
+        expense = serializer.save(employee=user, department=dept)
+        
         manager = expense.employee.manager
         if manager:
             create_notification(
