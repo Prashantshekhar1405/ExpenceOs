@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from core.models import User
 from . import serializers
-from .models import Expense
-from .permissions import ExpensePermission
+from .models import Expense , ExpenseCategory
+from .permissions import ExpensePermission , ExpenseCategoryPermission
 from reimbursement.models import Reimbursement
 from notifications.models import Notification
 from notifications.services import create_notification
@@ -126,3 +126,7 @@ class ExpenseViewSet(ModelViewSet):
             "status": expense.status
         }, status=status.HTTP_200_OK)
 
+class ExpenseCategoryViewSet(ModelViewSet):
+    queryset = ExpenseCategory.objects.all()
+    serializer_class = serializers.ExpenseCategorySerializer
+    permission_classes = [ExpenseCategoryPermission]

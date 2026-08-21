@@ -69,3 +69,21 @@ class ExpensePermission(BasePermission):
 
         return False
 
+class ExpenseCategoryPermission(BasePermission):
+    def has_permission(self, request, view):
+
+        if not request.user.is_authenticated:
+            return False
+
+        user = request.user
+
+        if user.role == User.Role.ADMIN:
+            return True
+
+        if user.role in [ User.Role.EMPLOYEE , User.Role.MANAGER , User.Role.FINANCE_MANAGER ]:
+            return view.action in [
+                "list",
+                "retrieve"
+            ]
+
+        return False
