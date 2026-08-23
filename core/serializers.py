@@ -17,26 +17,29 @@ class LoginSerializer(TokenObtainPairSerializer):
         return token
 
 class UserSerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source="department.name", read_only=True, default=None)
+    manager_name = serializers.CharField(source="manager.username", read_only=True, default=None)
+
     class Meta:
         model = User
-        fields = ["id" , "username" , "email" , "employee_id" , "manager" ,"department" , "role"]
+        fields = ["id" , "username" , "email" , "employee_id" , "manager" , "manager_name" ,"department" , "department_name" , "role" , "is_active"]
 
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["username" , "email" , "password" , "employee_id" , "department" , "manager" , "role"]
+        fields = ["id" , "username" , "email" , "password" , "employee_id" , "department" , "manager" , "role" , "is_active"]
 
         extra_kwargs = {
             "password" : {"write_only" : True}
         }
 
-        def create(self , validated_data):
-            password = validated_data.pop("password")
-            user = User(**validated_data)
-            user.set_password(password)
-            user.save()
+    def create(self , validated_data):
+        password = validated_data.pop("password")
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
 
-            return user
+        return user
 
 class DepartmentSerializer(serializers.ModelSerializer):
     manager_name = serializers.CharField(source="manager.username", read_only=True, default=None)
