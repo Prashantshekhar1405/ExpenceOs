@@ -39,6 +39,18 @@ class UserCreateSerializer(serializers.ModelSerializer):
             return user
 
 class DepartmentSerializer(serializers.ModelSerializer):
+    manager_name = serializers.CharField(source="manager.username", read_only=True, default=None)
+    spent = serializers.SerializerMethodField()
     class Meta:
         model = Department
-        fields = ["id" , "name" , "code" , "description" , "manager" , "is_active"]
+        fields = ["id" , "name" , "code" , "description" , "manager" ,"manager_name", "is_active" , "spent"]
+        
+    def get_spent(self, obj):
+        from django.db.models import Sum, Q
+        from expenses.models import Expense
+        total = Expense.objects.filter(
+            Q(department=obj) | Q(employee__department=obj)
+        ).exclude(
+            status=Expense.Status.REJECTED
+        ).distinct().aggregate(total=Sum("amount"))["total"]
+        return float(total or 0)
