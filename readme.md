@@ -14,6 +14,9 @@ architecture.
 
 ## 🚀 Project Overview
 
+
+
+
 ExpenseOS provides a centralized platform where organizations can:
 
 -   Manage employees and organizational roles
